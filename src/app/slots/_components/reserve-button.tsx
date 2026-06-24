@@ -19,18 +19,21 @@ export function ReserveButton({
   const [state, action, pending] = useActionState(reserveSlotAction, initial);
 
   return (
-    <form action={action} className="flex flex-col items-end gap-1">
+    <form action={action} style={{ display: "flex", flexDirection: "column", alignItems: "flex-end", gap: "0.25rem" }}>
       <input type="hidden" name="slotId" value={slotId} />
       <button
         type="submit"
         disabled={disabled || pending}
         title={disabled ? "Você já tem uma reserva ativa" : undefined}
-        className="rounded-full bg-green-600 px-3 py-1 text-xs font-medium text-white hover:bg-green-700 disabled:cursor-not-allowed disabled:opacity-40"
+        className="btn btn-ghost btn-sm"
+        style={{ color: "var(--accent)", borderColor: "var(--accent)" }}
       >
         {pending ? "Reservando…" : "Reservar"}
       </button>
       {state.error && (
-        <span className="text-xs text-red-600">{state.error}</span>
+        <span style={{ fontSize: "0.75rem", color: "var(--danger)" }}>
+          {state.error}
+        </span>
       )}
     </form>
   );

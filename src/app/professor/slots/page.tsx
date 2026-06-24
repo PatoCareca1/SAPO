@@ -7,7 +7,6 @@ import {
 } from "./_components/create-forms";
 import { SlotTable, type SlotView } from "./_components/slot-table";
 
-// Sempre buscar dados frescos (slots mudam com reservas/edições).
 export const dynamic = "force-dynamic";
 
 export default async function ManageSlotsPage() {
@@ -27,6 +26,7 @@ export default async function ManageSlotsPage() {
     note: slot.note,
     reservation: slot.reservation
       ? {
+          id: slot.reservation.id,
           studentEmail: slot.reservation.student.email,
           studentName: slot.reservation.student.name,
         }
@@ -34,26 +34,27 @@ export default async function ManageSlotsPage() {
   }));
 
   return (
-    <main className="mx-auto flex w-full max-w-4xl flex-col gap-6 p-6">
+    <div className="page-wrapper">
       <header>
-        <h1 className="text-2xl font-semibold">Gerenciar slots</h1>
-        <p className="text-sm text-zinc-500">
-          Horários exibidos no fuso da UFRN (UTC-3). Toda ação é registrada na
-          auditoria.
+        <h1 className="page-title">Gerenciar Slots</h1>
+        <p className="page-subtitle">
+          Crie horários individualmente ou em lote, e edite os existentes.
         </p>
       </header>
 
-      <div className="grid gap-4 lg:grid-cols-2">
+      {/* Formulários lado a lado */}
+      <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(18rem, 1fr))", gap: "1.25rem" }}>
         <CreateSlotForm />
         <CreateBatchForm />
       </div>
 
-      <section className="flex flex-col gap-2">
-        <h2 className="text-base font-semibold">
+      {/* Tabela de slots */}
+      <section style={{ display: "flex", flexDirection: "column", gap: "0.75rem" }}>
+        <h2 style={{ fontSize: "1rem", fontWeight: 600, color: "var(--text-primary)" }}>
           Slots ({view.length})
         </h2>
         <SlotTable slots={view} />
       </section>
-    </main>
+    </div>
   );
 }

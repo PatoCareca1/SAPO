@@ -9,5 +9,5 @@ export default async function Home() {
   if (!user) {
     redirect("/login");
   }
-  redirect(user.role === "PROFESSOR" ? "/professor/slots" : "/slots");
+  redirect(user.role === "PROFESSOR" ? "/professor/dashboard" : "/slots");
 }
