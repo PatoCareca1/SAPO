@@ -1,0 +1,145 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+// Get a free hosted Postgres database in seconds: `npx create-db`
+
+generator client {
+  provider = "prisma-client"
+  output   = "../src/generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+enum Role {
+  STUDENT
+  PROFESSOR
+}
+
+model User {
+  id            String    @id @default(cuid())
+  email         String    @unique
+  name          String?
+  image         String?
+  emailVerified DateTime?
+  role          Role      @default(STUDENT)
+  createdAt     DateTime  @default(now())
+
+  accounts Account[]
+  sessions Session[]
+
+  // Reserva ativa única do aluno (1-1; null se não tiver reserva ativa).
+  reservation Reservation?
+  // Trilha de auditoria das ações em que este usuário foi o autor.
+  auditLogs   AuditLog[]
+
+  @@map("users")
+}
+
+// Tabelas exigidas pelo @auth/prisma-adapter (Auth.js v5)
+model Account {
+  userId            String
+  type              String
+  provider          String
+  providerAccountId String
+  refresh_token     String?
+  access_token      String?
+  expires_at        Int?
+  token_type        String?
+  scope             String?
+  id_token          String?
+  session_state     String?
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@id([provider, providerAccountId])
+  @@map("accounts")
+}
+
+model Session {
+  sessionToken String   @unique
+  userId       String
+  expires      DateTime
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("sessions")
+}
+
+model VerificationToken {
+  identifier String
+  token      String
+  expires    DateTime
+
+  @@id([identifier, token])
+  @@map("verification_tokens")
+}
+
+// ---------------------------------------------------------------------------
+// Núcleo do SAPO: agendamento + auditoria
+// ---------------------------------------------------------------------------
+
+// Janela de horário criada pelo professor (slot de prova oral, ~30 min).
+// startsAt é armazenado em UTC; a exibição em UTC-3 é responsabilidade da UI.
+model Slot {
+  id          String   @id @default(cuid())
+  startsAt    DateTime
+  durationMin Int      @default(30)
+  location    String?
+  note        String?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  // Relação 1-1 opcional: o slot está livre quando reservation é null.
+  reservation Reservation?
+
+  @@index([startsAt])
+  @@map("slots")
+}
+
+// Reserva ATIVA. A tabela guarda apenas reservas ativas; o cancelamento
+// apaga a linha e registra o evento no AuditLog (fonte do histórico).
+//
+// Garantias no nível do banco (concorrência):
+//   - slotId @unique    -> dois alunos nunca reservam o mesmo slot.
+//   - studentId @unique -> cada aluno tem no máximo 1 reserva ativa.
+// A violação dessas constraints é capturada na transação de reserva e
+// convertida em erro 409 "horário já reservado" / "você já tem uma reserva".
+model Reservation {
+  id        String   @id @default(cuid())
+  slotId    String   @unique
+  studentId String   @unique
+  createdAt DateTime @default(now())
+
+  slot    Slot @relation(fields: [slotId], references: [id], onDelete: Cascade)
+  student User @relation(fields: [studentId], references: [id], onDelete: Cascade)
+
+  @@map("reservations")
+}
+
+// Registro imutável (append-only) de toda ação relevante. A aplicação nunca
+// faz UPDATE/DELETE nesta tabela; a escrita ocorre na MESMA transação da ação.
+// actorEmail/actorRole são desnormalizados para o log sobreviver mesmo que o
+// usuário seja removido (actorId vira null via onDelete: SetNull).
+model AuditLog {
+  id         String   @id @default(cuid())
+  timestamp  DateTime @default(now())
+  actorId    String?
+  actorEmail String
+  actorRole  Role
+  action     String
+  targetType String?
+  targetId   String?
+  details    Json?
+  ip         String?
+  userAgent  String?
+
+  actor User? @relation(fields: [actorId], references: [id], onDelete: SetNull)
+
+  @@index([timestamp])
+  @@index([actorEmail])
+  @@index([action])
+  @@index([targetType, targetId])
+  @@map("audit_log")
+}
