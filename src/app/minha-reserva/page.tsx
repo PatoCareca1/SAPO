@@ -16,55 +16,139 @@ export default async function MyReservationPage() {
   });
 
   return (
-    <main className="mx-auto flex w-full max-w-2xl flex-col gap-6 p-6">
+    <div className="page-wrapper-narrow">
       <header>
-        <h1 className="text-2xl font-semibold">Minha reserva</h1>
-        <p className="text-sm text-zinc-500">Horário no fuso da UFRN (UTC-3).</p>
+        <h1 className="page-title">Minha Reserva</h1>
+        <p className="page-subtitle">Horário no fuso da UFRN (UTC-3).</p>
       </header>
 
       {reservation ? (
-        <div className="flex flex-col gap-4 rounded-lg border border-blue-200 bg-blue-50 p-5">
-          <div className="flex flex-col gap-1">
-            <span className="text-lg font-medium capitalize">
-              {formatUfrnDayLabel(reservation.slot.startsAt)}
-            </span>
-            <span className="text-2xl font-semibold">
-              {formatUfrnTime(reservation.slot.startsAt)}
-            </span>
-            <span className="text-sm text-zinc-600">
-              Duração: {reservation.slot.durationMin} min
-            </span>
-            {reservation.slot.location && (
-              <span className="text-sm text-zinc-600">
-                Local: {reservation.slot.location}
+        <div>
+          {/* Hero card */}
+          <div
+            style={{
+              borderRadius: "1rem",
+              overflow: "hidden",
+              boxShadow: "var(--shadow-md)",
+            }}
+          >
+            {/* Topo navy */}
+            <div
+              style={{
+                background: "linear-gradient(135deg, #0f2557 0%, #1a3a6e 100%)",
+                padding: "1.75rem 1.75rem 2rem",
+                position: "relative",
+                overflow: "hidden",
+              }}
+            >
+              {/* Sapo decorativo */}
+              <div
+                style={{
+                  position: "absolute",
+                  right: "1.5rem",
+                  top: "50%",
+                  transform: "translateY(-50%)",
+                  fontSize: "6rem",
+                  opacity: 0.12,
+                  userSelect: "none",
+                  pointerEvents: "none",
+                }}
+              >
+                🐸
+              </div>
+
+              <span
+                className="badge badge-mine"
+                style={{ marginBottom: "1rem", display: "inline-flex" }}
+              >
+                ★ Reserva confirmada
               </span>
-            )}
-            {reservation.slot.note && (
-              <span className="text-sm text-zinc-600">
-                Obs.: {reservation.slot.note}
-              </span>
-            )}
-          </div>
-          <div>
-            <CancelButton
-              reservationId={reservation.id}
-              label="Cancelar reserva"
-            />
+
+              <div style={{ color: "#cbd5e1", fontSize: "0.9375rem", fontWeight: 500, marginBottom: "0.25rem", textTransform: "capitalize" }}>
+                {formatUfrnDayLabel(reservation.slot.startsAt)}
+              </div>
+              <div style={{ color: "#ffffff", fontSize: "3.5rem", fontWeight: 800, lineHeight: 1, letterSpacing: "-0.03em" }}>
+                {formatUfrnTime(reservation.slot.startsAt)}
+              </div>
+              <div style={{ color: "#94a3b8", fontSize: "0.875rem", marginTop: "0.5rem" }}>
+                Duração de {reservation.slot.durationMin} minutos
+              </div>
+            </div>
+
+            {/* Parte branca com detalhes */}
+            <div
+              className="card"
+              style={{
+                borderRadius: 0,
+                borderTop: "none",
+                padding: "1.5rem 1.75rem",
+                display: "flex",
+                flexDirection: "column",
+                gap: "1.25rem",
+              }}
+            >
+              <div style={{ display: "flex", gap: "2rem", flexWrap: "wrap" }}>
+                {reservation.slot.location && (
+                  <div>
+                    <div style={{ fontSize: "0.6875rem", fontWeight: 700, color: "var(--text-muted)", textTransform: "uppercase", letterSpacing: "0.08em", marginBottom: "0.375rem" }}>
+                      LOCAL
+                    </div>
+                    <div style={{ display: "flex", alignItems: "center", gap: "0.375rem", fontSize: "0.9375rem", color: "var(--text-primary)", fontWeight: 500 }}>
+                      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ color: "var(--accent)" }}>
+                        <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/>
+                        <circle cx="12" cy="10" r="3"/>
+                      </svg>
+                      {reservation.slot.location}
+                    </div>
+                  </div>
+                )}
+                {reservation.slot.note && (
+                  <div>
+                    <div style={{ fontSize: "0.6875rem", fontWeight: 700, color: "var(--text-muted)", textTransform: "uppercase", letterSpacing: "0.08em", marginBottom: "0.375rem" }}>
+                      OBSERVAÇÕES
+                    </div>
+                    <div style={{ fontSize: "0.9375rem", color: "var(--text-primary)" }}>
+                      {reservation.slot.note}
+                    </div>
+                  </div>
+                )}
+              </div>
+
+              <CancelButton
+                reservationId={reservation.id}
+                label="Cancelar reserva"
+                slotDescription={`${formatUfrnDayLabel(reservation.slot.startsAt)} às ${formatUfrnTime(reservation.slot.startsAt)}`}
+              />
+            </div>
           </div>
         </div>
       ) : (
-        <div className="flex flex-col items-start gap-3 rounded-lg border border-dashed border-zinc-300 p-6">
-          <p className="text-sm text-zinc-600">
-            Você ainda não tem uma reserva ativa.
-          </p>
-          <Link
-            href="/slots"
-            className="rounded-md bg-zinc-900 px-4 py-2 text-sm font-medium text-white hover:bg-zinc-700"
-          >
+        /* Empty state */
+        <div
+          style={{
+            border: "2px dashed var(--border-default)",
+            borderRadius: "0.75rem",
+            padding: "3rem 2rem",
+            display: "flex",
+            flexDirection: "column",
+            alignItems: "flex-start",
+            gap: "1rem",
+          }}
+        >
+          <div style={{ fontSize: "3rem" }}>📋</div>
+          <div>
+            <p style={{ fontWeight: 600, color: "var(--text-primary)", fontSize: "1rem", marginBottom: "0.25rem" }}>
+              Nenhuma reserva ativa
+            </p>
+            <p style={{ fontSize: "0.875rem", color: "var(--text-secondary)" }}>
+              Você ainda não tem uma reserva ativa.
+            </p>
+          </div>
+          <Link href="/slots" className="btn btn-primary">
             Ver horários disponíveis
           </Link>
         </div>
       )}
-    </main>
+    </div>
   );
 }

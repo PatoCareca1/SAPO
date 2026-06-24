@@ -9,6 +9,7 @@ import {
   parseAuditFilters,
   type AuditFilters,
 } from "@/lib/audit-query";
+import { ActionBadge } from "@/components/status-badge";
 
 export const dynamic = "force-dynamic";
 
@@ -48,193 +49,211 @@ export default async function AuditPage({
   const filterQuery = { ...filters } as Record<string, string | undefined>;
 
   return (
-    <main className="mx-auto flex w-full max-w-6xl flex-col gap-5 p-6">
-      <header className="flex flex-wrap items-center justify-between gap-2">
+    <div className="page-wrapper">
+      {/* Header */}
+      <div style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between", flexWrap: "wrap", gap: "1rem" }}>
         <div>
-          <h1 className="text-2xl font-semibold">Auditoria</h1>
-          <p className="text-sm text-zinc-500">
-            {total} registro(s). Horários em UTC-3.
-          </p>
+          <h1 className="page-title">Auditoria Completa</h1>
+          <div style={{ display: "flex", alignItems: "center", gap: "0.625rem", marginTop: "0.375rem" }}>
+            <span className="badge badge-gray">
+              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <rect x="3" y="3" width="18" height="18" rx="2" ry="2"/>
+                <line x1="9" y1="9" x2="15" y2="9"/>
+                <line x1="9" y1="12" x2="15" y2="12"/>
+                <line x1="9" y1="15" x2="11" y2="15"/>
+              </svg>
+              Registro append-only
+            </span>
+            <span style={{ fontSize: "0.875rem", color: "var(--text-muted)" }}>
+              {total} evento{total !== 1 ? "s" : ""}
+            </span>
+          </div>
         </div>
         <a
           href={`/professor/auditoria/export${buildQuery(filterQuery)}`}
-          className="rounded-md bg-zinc-900 px-4 py-2 text-sm font-medium text-white hover:bg-zinc-700"
+          className="btn btn-ghost"
+          style={{ display: "flex", alignItems: "center", gap: "0.5rem" }}
         >
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+            <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
+            <polyline points="7 10 12 15 17 10"/>
+            <line x1="12" y1="15" x2="12" y2="3"/>
+          </svg>
           Exportar CSV
         </a>
-      </header>
-
-      <AuditFilterForm filters={filters} />
-
-      <div className="overflow-x-auto rounded-lg border border-zinc-200">
-        <table className="w-full border-collapse text-sm">
-          <thead className="bg-zinc-50 text-left text-zinc-600">
-            <tr>
-              <th className="px-3 py-2 font-medium">Quando (UTC-3)</th>
-              <th className="px-3 py-2 font-medium">Ator</th>
-              <th className="px-3 py-2 font-medium">Papel</th>
-              <th className="px-3 py-2 font-medium">Ação</th>
-              <th className="px-3 py-2 font-medium">Target</th>
-              <th className="px-3 py-2 font-medium">Detalhes</th>
-            </tr>
-          </thead>
-          <tbody>
-            {logs.length === 0 && (
-              <tr>
-                <td colSpan={6} className="px-3 py-6 text-center text-zinc-500">
-                  Nenhum registro para os filtros aplicados.
-                </td>
-              </tr>
-            )}
-            {logs.map((log) => (
-              <tr key={log.id} className="border-t border-zinc-100 align-top">
-                <td className="whitespace-nowrap px-3 py-2">
-                  {formatUfrn(log.timestamp)}
-                </td>
-                <td className="px-3 py-2">{log.actorEmail}</td>
-                <td className="px-3 py-2">{log.actorRole}</td>
-                <td className="px-3 py-2 font-mono text-xs">{log.action}</td>
-                <td className="px-3 py-2 text-xs">
-                  {log.targetType ? `${log.targetType}:${log.targetId ?? "—"}` : "—"}
-                </td>
-                <td className="px-3 py-2">
-                  {log.details ? (
-                    <details>
-                      <summary className="cursor-pointer text-xs text-blue-700">
-                        ver
-                      </summary>
-                      <pre className="mt-1 max-w-md overflow-x-auto rounded bg-zinc-50 p-2 text-xs">
-                        {JSON.stringify(log.details, null, 2)}
-                      </pre>
-                    </details>
-                  ) : (
-                    "—"
-                  )}
-                </td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
       </div>
 
-      <nav className="flex items-center justify-between text-sm">
-        <span className="text-zinc-500">
+      {/* Filtros */}
+      <AuditFilterForm filters={filters} />
+
+      {/* Tabela */}
+      <div className="card" style={{ overflow: "hidden" }}>
+        <div style={{ overflowX: "auto" }}>
+          <table className="data-table">
+            <thead>
+              <tr>
+                <th>Quando (UTC-3)</th>
+                <th>Ator</th>
+                <th>Papel</th>
+                <th>Ação</th>
+                <th>Alvo</th>
+                <th>Detalhes</th>
+              </tr>
+            </thead>
+            <tbody>
+              {logs.length === 0 && (
+                <tr>
+                  <td colSpan={6} style={{ textAlign: "center", color: "var(--text-muted)", padding: "2rem" }}>
+                    Nenhum registro para os filtros aplicados.
+                  </td>
+                </tr>
+              )}
+              {logs.map((log) => (
+                <tr key={log.id} style={{ verticalAlign: "top" }}>
+                  <td style={{ whiteSpace: "nowrap", fontSize: "0.8125rem", color: "var(--text-secondary)" }}>
+                    {formatUfrn(log.timestamp)}
+                  </td>
+                  <td style={{ fontSize: "0.8125rem" }}>
+                    <div style={{ fontWeight: 500, color: "var(--text-primary)" }}>
+                      {log.actorEmail.split("@")[0]}
+                    </div>
+                    <div style={{ color: "var(--text-muted)", fontSize: "0.75rem" }}>
+                      {log.actorEmail}
+                    </div>
+                  </td>
+                  <td style={{ fontSize: "0.8125rem", color: "var(--text-secondary)" }}>
+                    {log.actorRole === "PROFESSOR" ? "Professor" : "Aluno"}
+                  </td>
+                  <td>
+                    <ActionBadge action={log.action} />
+                  </td>
+                  <td style={{ fontSize: "0.75rem", color: "var(--text-muted)", fontFamily: "monospace" }}>
+                    {log.targetType ? `${log.targetType}:${log.targetId ?? "—"}` : "—"}
+                  </td>
+                  <td>
+                    {log.details ? (
+                      <details>
+                        <summary style={{ cursor: "pointer", fontSize: "0.8125rem", color: "var(--accent)", userSelect: "none" }}>
+                          ver ›
+                        </summary>
+                        <pre
+                          style={{
+                            marginTop: "0.5rem",
+                            padding: "0.75rem",
+                            background: "var(--bg-muted)",
+                            border: "1px solid var(--border-default)",
+                            borderRadius: "0.5rem",
+                            fontSize: "0.75rem",
+                            overflowX: "auto",
+                            maxWidth: "28rem",
+                            color: "var(--text-primary)",
+                          }}
+                        >
+                          {JSON.stringify(log.details, null, 2)}
+                        </pre>
+                      </details>
+                    ) : (
+                      <span style={{ color: "var(--text-muted)" }}>—</span>
+                    )}
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      {/* Paginação */}
+      <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", fontSize: "0.875rem" }}>
+        <span style={{ color: "var(--text-muted)" }}>
           Página {page} de {totalPages}
         </span>
-        <div className="flex gap-2">
-          <PageLink
-            disabled={page <= 1}
-            href={`/professor/auditoria${buildQuery({ ...filterQuery, page: page - 1 })}`}
-          >
-            Anterior
-          </PageLink>
-          <PageLink
-            disabled={page >= totalPages}
-            href={`/professor/auditoria${buildQuery({ ...filterQuery, page: page + 1 })}`}
-          >
-            Próxima
-          </PageLink>
+        <div style={{ display: "flex", gap: "0.5rem" }}>
+          {page > 1 ? (
+            <Link
+              href={`/professor/auditoria${buildQuery({ ...filterQuery, page: page - 1 })}`}
+              className="btn btn-ghost btn-sm"
+            >
+              Anterior
+            </Link>
+          ) : (
+            <span className="btn btn-ghost btn-sm" style={{ opacity: 0.4, cursor: "not-allowed" }}>
+              Anterior
+            </span>
+          )}
+          {page < totalPages ? (
+            <Link
+              href={`/professor/auditoria${buildQuery({ ...filterQuery, page: page + 1 })}`}
+              className="btn btn-ghost btn-sm"
+            >
+              Próxima
+            </Link>
+          ) : (
+            <span className="btn btn-ghost btn-sm" style={{ opacity: 0.4, cursor: "not-allowed" }}>
+              Próxima
+            </span>
+          )}
         </div>
-      </nav>
-    </main>
-  );
-}
-
-function PageLink({
-  href,
-  disabled,
-  children,
-}: {
-  href: string;
-  disabled: boolean;
-  children: React.ReactNode;
-}) {
-  if (disabled) {
-    return (
-      <span className="cursor-not-allowed rounded-md border border-zinc-200 px-3 py-1 text-zinc-300">
-        {children}
-      </span>
-    );
-  }
-  return (
-    <Link
-      href={href}
-      className="rounded-md border border-zinc-300 px-3 py-1 hover:bg-zinc-50"
-    >
-      {children}
-    </Link>
+      </div>
+    </div>
   );
 }
 
 function AuditFilterForm({ filters }: { filters: AuditFilters }) {
-  const field =
-    "rounded-md border border-zinc-300 px-2 py-1 text-sm focus:border-zinc-500 focus:outline-none";
   return (
     <form
       method="GET"
       action="/professor/auditoria"
-      className="flex flex-wrap items-end gap-3 rounded-lg border border-zinc-200 p-3"
+      className="card"
+      style={{ padding: "1rem 1.25rem", display: "flex", flexWrap: "wrap", alignItems: "flex-end", gap: "0.75rem" }}
     >
-      <label className="flex flex-col gap-1 text-xs text-zinc-600">
+      <label className="field-label">
         Ator (e-mail)
         <input
           type="text"
           name="actorEmail"
           defaultValue={filters.actorEmail ?? ""}
-          placeholder="aluno@ufrn.br"
-          className={field}
+          placeholder="email@ufrn.edu.br"
+          className="field"
+          style={{ width: "14rem" }}
         />
       </label>
-      <label className="flex flex-col gap-1 text-xs text-zinc-600">
+      <label className="field-label" style={{ minWidth: "12rem" }}>
         Ação
-        <select name="action" defaultValue={filters.action ?? ""} className={field}>
-          <option value="">Todas</option>
+        <select name="action" defaultValue={filters.action ?? ""} className="field">
+          <option value="">Todas as ações</option>
           {AUDIT_ACTIONS.map((a) => (
-            <option key={a} value={a}>
-              {a}
-            </option>
+            <option key={a} value={a}>{a}</option>
           ))}
         </select>
       </label>
-      <label className="flex flex-col gap-1 text-xs text-zinc-600">
-        Target (id)
+      <label className="field-label">
+        Alvo (ID)
         <input
           type="text"
           name="targetId"
           defaultValue={filters.targetId ?? ""}
-          className={field}
+          placeholder="slot:s3"
+          className="field"
+          style={{ width: "9rem" }}
         />
       </label>
-      <label className="flex flex-col gap-1 text-xs text-zinc-600">
+      <label className="field-label">
         De
-        <input
-          type="date"
-          name="from"
-          defaultValue={filters.from ?? ""}
-          className={field}
-        />
+        <input type="date" name="from" defaultValue={filters.from ?? ""} className="field" />
       </label>
-      <label className="flex flex-col gap-1 text-xs text-zinc-600">
+      <label className="field-label">
         Até
-        <input
-          type="date"
-          name="to"
-          defaultValue={filters.to ?? ""}
-          className={field}
-        />
+        <input type="date" name="to" defaultValue={filters.to ?? ""} className="field" />
       </label>
-      <button
-        type="submit"
-        className="rounded-md bg-zinc-900 px-4 py-1.5 text-sm font-medium text-white hover:bg-zinc-700"
-      >
-        Filtrar
-      </button>
-      <Link
-        href="/professor/auditoria"
-        className="rounded-md border border-zinc-300 px-4 py-1.5 text-sm hover:bg-zinc-50"
-      >
-        Limpar
-      </Link>
+      <div style={{ display: "flex", gap: "0.5rem" }}>
+        <button type="submit" className="btn btn-primary btn-sm">
+          Filtrar
+        </button>
+        <Link href="/professor/auditoria" className="btn btn-ghost btn-sm">
+          Limpar
+        </Link>
+      </div>
     </form>
   );
 }

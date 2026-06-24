@@ -7,8 +7,8 @@ import {
 } from "@/lib/datetime";
 import { ReserveButton } from "./_components/reserve-button";
 import { CancelButton } from "./_components/cancel-button";
+import { StatusBadge } from "@/components/status-badge";
 
-// Slots mudam com reservas; sempre buscar dados frescos.
 export const dynamic = "force-dynamic";
 
 export default async function SlotsPage() {
@@ -19,13 +19,11 @@ export default async function SlotsPage() {
     include: { reservation: { include: { student: true } } },
   });
 
-  // Reserva ativa do próprio aluno (para destaque e aviso de 1-por-aluno).
   const myReservation = await prisma.reservation.findUnique({
     where: { studentId: user.id },
     include: { slot: true },
   });
 
-  // Agrupa por dia (UTC-3), preservando a ordem cronológica.
   const groups = new Map<string, typeof slots>();
   for (const slot of slots) {
     const key = ufrnDayKey(slot.startsAt);
@@ -35,122 +33,169 @@ export default async function SlotsPage() {
   }
 
   return (
-    <main className="mx-auto flex w-full max-w-3xl flex-col gap-6 p-6">
-      <header className="flex flex-col gap-1">
-        <h1 className="text-2xl font-semibold">Horários de prova</h1>
-        <p className="text-sm text-zinc-500">
-          Horários no fuso da UFRN (UTC-3).
+    <div className="page-wrapper">
+      {/* Header */}
+      <header>
+        <h1 className="page-title">Horários de Prova</h1>
+        <p className="page-subtitle">
+          Reserve um horário para sua prova oral. Você pode manter apenas uma
+          reserva ativa.
         </p>
-        {myReservation ? (
-          <p className="mt-2 rounded-md bg-blue-50 px-3 py-2 text-sm text-blue-800">
-            Você tem uma reserva ativa em{" "}
-            <strong>
-              {formatUfrnDayLabel(myReservation.slot.startsAt)} às{" "}
-              {formatUfrnTime(myReservation.slot.startsAt)}
-            </strong>
-            . Para reservar outro horário, cancele esta primeiro.
-          </p>
-        ) : (
-          <p className="mt-2 text-sm text-zinc-500">
-            Você ainda não tem reserva. Pode reservar 1 horário livre.
-          </p>
+
+        {myReservation && (
+          <div className="alert-info" style={{ marginTop: "1rem" }}>
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ flexShrink: 0, marginTop: "0.1rem" }}>
+              <circle cx="12" cy="12" r="10"/>
+              <line x1="12" y1="8" x2="12" y2="12"/>
+              <line x1="12" y1="16" x2="12.01" y2="16"/>
+            </svg>
+            <span>
+              Você tem reserva ativa em{" "}
+              <strong>
+                {formatUfrnDayLabel(myReservation.slot.startsAt)} às{" "}
+                {formatUfrnTime(myReservation.slot.startsAt)}
+              </strong>
+              . Cancele para reservar outro horário.
+            </span>
+          </div>
         )}
       </header>
 
+      {/* Empty state */}
       {slots.length === 0 && (
-        <p className="rounded-lg border border-dashed border-zinc-300 p-6 text-center text-sm text-zinc-500">
-          Nenhum horário disponível ainda.
-        </p>
+        <div
+          style={{
+            border: "2px dashed var(--border-default)",
+            borderRadius: "0.75rem",
+            padding: "3rem 2rem",
+            textAlign: "center",
+            color: "var(--text-muted)",
+          }}
+        >
+          <div style={{ fontSize: "3rem", marginBottom: "0.75rem" }}>🗓️</div>
+          <p style={{ fontWeight: 600, color: "var(--text-secondary)" }}>
+            Nenhum horário disponível ainda.
+          </p>
+          <p style={{ fontSize: "0.875rem", marginTop: "0.25rem" }}>
+            O professor ainda não criou horários de prova.
+          </p>
+        </div>
       )}
 
-      {[...groups.entries()].map(([key, daySlots]) => (
-        <section key={key} className="flex flex-col gap-2">
-          <h2 className="text-sm font-semibold capitalize text-zinc-700">
-            {formatUfrnDayLabel(daySlots[0].startsAt)}
-          </h2>
-          <ul className="flex flex-col gap-2">
-            {daySlots.map((slot) => {
-              const isMine = slot.reservation?.studentId === user.id;
-              const occupied = Boolean(slot.reservation);
-              const isPast = slot.startsAt.getTime() <= Date.now();
-              return (
-                <li
-                  key={slot.id}
-                  className={`flex flex-wrap items-center justify-between gap-2 rounded-lg border p-3 text-sm ${
-                    isMine
-                      ? "border-blue-300 bg-blue-50"
-                      : "border-zinc-200 bg-white"
-                  }`}
-                >
-                  <div className="flex flex-col">
-                    <span className="font-medium">
-                      {formatUfrnTime(slot.startsAt)} · {slot.durationMin} min
-                    </span>
-                    <span className="text-xs text-zinc-500">
-                      {slot.location ?? "Local a definir"}
-                      {slot.note ? ` · ${slot.note}` : ""}
-                    </span>
-                  </div>
+      {/* Grupos por dia */}
+      <div style={{ display: "flex", flexDirection: "column", gap: "2rem" }}>
+        {[...groups.entries()].map(([key, daySlots]) => (
+          <section key={key}>
+            {/* Cabeçalho do dia */}
+            <div
+              style={{
+                display: "flex",
+                alignItems: "center",
+                gap: "0.625rem",
+                marginBottom: "0.75rem",
+              }}
+            >
+              <span
+                style={{
+                  width: "0.625rem",
+                  height: "0.625rem",
+                  borderRadius: "50%",
+                  background: "var(--accent)",
+                  flexShrink: 0,
+                }}
+              />
+              <h2
+                style={{
+                  fontSize: "0.9375rem",
+                  fontWeight: 600,
+                  color: "var(--text-primary)",
+                  textTransform: "capitalize",
+                }}
+              >
+                {formatUfrnDayLabel(daySlots[0].startsAt)}
+              </h2>
+            </div>
 
-                  <div className="flex items-center gap-3">
-                    <StatusBadge
-                      isMine={isMine}
-                      occupied={occupied}
-                      studentLabel={
-                        slot.reservation
-                          ? slot.reservation.student.name ??
-                            slot.reservation.student.email
-                          : null
-                      }
-                    />
+            {/* Lista de slots */}
+            <ul style={{ listStyle: "none", padding: 0, margin: 0, display: "flex", flexDirection: "column", gap: "0.5rem" }}>
+              {daySlots.map((slot) => {
+                const isMine = slot.reservation?.studentId === user.id;
+                const occupied = Boolean(slot.reservation);
+                const isPast = slot.startsAt.getTime() <= Date.now();
+                const studentLabel = slot.reservation
+                  ? (slot.reservation.student.name ?? slot.reservation.student.email)
+                  : null;
 
-                    {/* Própria reserva: cancelar. Slot livre e futuro: reservar
-                        (desabilitado se o aluno já tem reserva ativa). */}
-                    {isMine && slot.reservation ? (
-                      <CancelButton reservationId={slot.reservation.id} />
-                    ) : !occupied && !isPast ? (
-                      <ReserveButton
-                        slotId={slot.id}
-                        disabled={Boolean(myReservation)}
-                      />
-                    ) : null}
-                  </div>
-                </li>
-              );
-            })}
-          </ul>
-        </section>
-      ))}
-    </main>
-  );
-}
+                return (
+                  <li
+                    key={slot.id}
+                    style={{
+                      background: "var(--bg-surface)",
+                      border: `1px solid ${isMine ? "var(--status-mine-border)" : "var(--border-default)"}`,
+                      borderRadius: "0.75rem",
+                      padding: "0.875rem 1.25rem",
+                      display: "flex",
+                      alignItems: "center",
+                      justifyContent: "space-between",
+                      gap: "1rem",
+                      flexWrap: "wrap",
+                      boxShadow: "var(--shadow-sm)",
+                    }}
+                  >
+                    {/* Info do slot */}
+                    <div style={{ display: "flex", flexDirection: "column", gap: "0.25rem" }}>
+                      <div style={{ display: "flex", alignItems: "center", gap: "0.75rem" }}>
+                        <span style={{ fontSize: "1rem", fontWeight: 700, color: "var(--text-primary)" }}>
+                          {formatUfrnTime(slot.startsAt)}
+                          <span style={{ fontSize: "0.875rem", fontWeight: 400, color: "var(--text-muted)" }}>
+                            {" "}· {slot.durationMin} min
+                          </span>
+                        </span>
+                        {isMine ? (
+                          <StatusBadge variant="mine" />
+                        ) : occupied ? (
+                          <StatusBadge variant="ocupado" label={`Ocupado · ${studentLabel}`} />
+                        ) : isPast ? (
+                          <StatusBadge variant="past" />
+                        ) : (
+                          <StatusBadge variant="livre" />
+                        )}
+                      </div>
+                      {(slot.location || slot.note) && (
+                        <div style={{ display: "flex", alignItems: "center", gap: "0.375rem", fontSize: "0.8125rem", color: "var(--text-muted)" }}>
+                          {slot.location && (
+                            <>
+                              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                                <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/>
+                                <circle cx="12" cy="10" r="3"/>
+                              </svg>
+                              {slot.location}
+                            </>
+                          )}
+                          {slot.location && slot.note && <span>·</span>}
+                          {slot.note && <span>{slot.note}</span>}
+                        </div>
+                      )}
+                    </div>
 
-function StatusBadge({
-  isMine,
-  occupied,
-  studentLabel,
-}: {
-  isMine: boolean;
-  occupied: boolean;
-  studentLabel: string | null;
-}) {
-  if (isMine) {
-    return (
-      <span className="rounded-full bg-blue-600 px-3 py-1 text-xs font-medium text-white">
-        ★ Sua reserva
-      </span>
-    );
-  }
-  if (occupied) {
-    return (
-      <span className="rounded-full bg-amber-100 px-3 py-1 text-xs font-medium text-amber-800">
-        Ocupado · {studentLabel}
-      </span>
-    );
-  }
-  return (
-    <span className="rounded-full bg-green-100 px-3 py-1 text-xs font-medium text-green-800">
-      Livre
-    </span>
+                    {/* Ações */}
+                    <div>
+                      {isMine && slot.reservation ? (
+                        <CancelButton reservationId={slot.reservation.id} />
+                      ) : !occupied && !isPast ? (
+                        <ReserveButton
+                          slotId={slot.id}
+                          disabled={Boolean(myReservation)}
+                        />
+                      ) : null}
+                    </div>
+                  </li>
+                );
+              })}
+            </ul>
+          </section>
+        ))}
+      </div>
+    </div>
   );
 }
