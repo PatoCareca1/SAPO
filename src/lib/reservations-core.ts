@@ -70,11 +70,32 @@ export async function reserveSlotCore(
       err instanceof Prisma.PrismaClientKnownRequestError &&
       err.code === "P2002"
     ) {
-      const target = String(err.meta?.target ?? "");
-      if (target.includes("slot")) return { ok: false, code: "SLOT_TAKEN" };
-      if (target.includes("student")) {
+      // 1. Verificar pelo target da Prisma se disponível (específico)
+      const target = err.meta?.target;
+      if (Array.isArray(target)) {
+        const targetStr = target.join(" ").toLowerCase();
+        if (targetStr.includes("slot")) return { ok: false, code: "SLOT_TAKEN" };
+        if (targetStr.includes("student")) return { ok: false, code: "ALREADY_RESERVED" };
+      } else if (typeof target === "string" && target) {
+        const targetStr = target.toLowerCase();
+        if (targetStr.includes("slot")) return { ok: false, code: "SLOT_TAKEN" };
+        if (targetStr.includes("student")) return { ok: false, code: "ALREADY_RESERVED" };
+      }
+
+      // 2. Verificar pela mensagem original do driver adapter (específica)
+      const originalMessage = ((err.meta as any)?.driverAdapterError?.cause?.originalMessage || "").toLowerCase();
+      if (originalMessage.includes("slotid")) return { ok: false, code: "SLOT_TAKEN" };
+      if (originalMessage.includes("studentid")) return { ok: false, code: "ALREADY_RESERVED" };
+
+      // 3. Fallback geral no erro completo (menos específico)
+      const errMsg = err.message.toLowerCase();
+      if (errMsg.includes("slotid_key") || errMsg.includes("slotid")) {
+        return { ok: false, code: "SLOT_TAKEN" };
+      }
+      if (errMsg.includes("studentid_key") || errMsg.includes("studentid")) {
         return { ok: false, code: "ALREADY_RESERVED" };
       }
+
       return { ok: false, code: "CONFLICT" };
     }
     throw err;

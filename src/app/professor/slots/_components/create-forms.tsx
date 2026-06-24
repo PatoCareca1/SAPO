@@ -29,7 +29,7 @@ export function CreateSlotForm() {
       <h2 style={{ fontSize: "1rem", fontWeight: 600, color: "var(--text-primary)", margin: 0 }}>
         Criar slot individual
       </h2>
-      <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "0.75rem" }}>
+      <div style={{ display: "grid", gridTemplateColumns: "repeat(2, minmax(0, 1fr))", gap: "0.75rem" }}>
         <label className="field-label" style={{ gridColumn: "1 / -1" }}>
           Data e hora (UTC-3)
           <input
@@ -93,7 +93,7 @@ export function CreateBatchForm() {
           Gera slots consecutivos do início ao fim do intervalo.
         </p>
       </div>
-      <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "0.75rem" }}>
+      <div style={{ display: "grid", gridTemplateColumns: "repeat(2, minmax(0, 1fr))", gap: "0.75rem" }}>
         <label className="field-label">
           Data início (UTC-3)
           <input type="datetime-local" name="startLocal" required className="field" />

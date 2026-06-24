@@ -156,24 +156,71 @@ export default async function LoginPage({
         </div>
 
         {/* Botões de demo */}
-        <div style={{ width: "100%", display: "flex", gap: "0.625rem" }}>
-          <button
-            className="btn btn-ghost"
-            style={{ flex: 1, padding: "0.625rem" }}
-            disabled
-            title="Em breve — requer banco de dados conectado"
-          >
-            Entrar como Aluno
-          </button>
-          <button
-            className="btn btn-primary"
-            style={{ flex: 1, padding: "0.625rem" }}
-            disabled
-            title="Em breve — requer banco de dados conectado"
-          >
-            Prof. Anderson
-          </button>
-        </div>
+        {process.env.NODE_ENV === "development" ? (
+          <div style={{ width: "100%", display: "flex", flexDirection: "column", gap: "0.625rem" }}>
+            <div style={{ display: "flex", gap: "0.625rem" }}>
+              <form
+                action={async () => {
+                  "use server";
+                  await signIn("credentials", {
+                    email: "joao@academico.ufrn.br",
+                    name: "João Silva",
+                    role: "STUDENT",
+                    redirectTo: "/",
+                  });
+                }}
+                style={{ flex: 1 }}
+              >
+                <button
+                  type="submit"
+                  className="btn btn-ghost"
+                  style={{ width: "100%", padding: "0.625rem", cursor: "pointer" }}
+                >
+                  Entrar como Aluno
+                </button>
+              </form>
+              <form
+                action={async () => {
+                  "use server";
+                  await signIn("credentials", {
+                    email: "anderson@ufrn.br",
+                    name: "Prof. Anderson",
+                    role: "PROFESSOR",
+                    redirectTo: "/",
+                  });
+                }}
+                style={{ flex: 1 }}
+              >
+                <button
+                  type="submit"
+                  className="btn btn-primary"
+                  style={{ width: "100%", padding: "0.625rem", cursor: "pointer" }}
+                >
+                  Prof. Anderson
+                </button>
+              </form>
+            </div>
+          </div>
+        ) : (
+          <div style={{ width: "100%", display: "flex", gap: "0.625rem" }}>
+            <button
+              className="btn btn-ghost"
+              style={{ flex: 1, padding: "0.625rem" }}
+              disabled
+              title="Apenas disponível em desenvolvimento"
+            >
+              Entrar como Aluno
+            </button>
+            <button
+              className="btn btn-primary"
+              style={{ flex: 1, padding: "0.625rem" }}
+              disabled
+              title="Apenas disponível em desenvolvimento"
+            >
+              Prof. Anderson
+            </button>
+          </div>
+        )}
 
         <button
           style={{

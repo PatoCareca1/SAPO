@@ -1,6 +1,7 @@
 "use client";
 
-import { useEffect, useRef } from "react";
+import { useEffect, useRef, useState } from "react";
+import { createPortal } from "react-dom";
 
 interface ConfirmModalProps {
   open: boolean;
@@ -24,6 +25,12 @@ export function ConfirmModal({
   dangerous = true,
 }: ConfirmModalProps) {
   const dialogRef = useRef<HTMLDivElement>(null);
+  const [mounted, setMounted] = useState(false);
+
+  // Detecta quando o componente monta no cliente
+  useEffect(() => {
+    setMounted(true);
+  }, []);
 
   // Fecha com Escape
   useEffect(() => {
@@ -36,8 +43,9 @@ export function ConfirmModal({
   }, [open, onCancel]);
 
   if (!open) return null;
+  if (!mounted) return null;
 
-  return (
+  return createPortal(
     <div
       className="modal-backdrop"
       onClick={(e) => {
@@ -95,6 +103,7 @@ export function ConfirmModal({
           </button>
         </div>
       </div>
-    </div>
+    </div>,
+    document.body
   );
 }
